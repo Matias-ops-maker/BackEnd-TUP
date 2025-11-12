@@ -15,11 +15,11 @@ const Vehicle = sequelize.define('Vehicle', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  aÃ±o_desde: {
+  año_desde: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  aÃ±o_hasta: {
+  año_hasta: {
     type: DataTypes.INTEGER,
     allowNull: true,
   },

@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 
 export async function listVehicles(req, res) {
     try {
-        const { page = 1, pageSize = 20, q, marca, modelo, aÃ±o } = req.query;
+        const { page = 1, pageSize = 20, q, marca, modelo, año } = req.query;
         const offset = (page - 1) * pageSize;
 
         const filtros = {};
@@ -15,14 +15,14 @@ export async function listVehicles(req, res) {
         }
         if (marca) filtros.marca = { [Op.like]: `%${marca}%` };
         if (modelo) filtros.modelo = { [Op.like]: `%${modelo}%` };
-        if (aÃ±o) {
-            const aÃ±oNum = parseInt(aÃ±o);
+        if (año) {
+            const añoNum = parseInt(año);
             filtros[Op.and] = [
-                { aÃ±o_desde: { [Op.lte]: aÃ±oNum } },
+                { año_desde: { [Op.lte]: añoNum } },
                 {
                     [Op.or]: [
-                        { aÃ±o_hasta: { [Op.gte]: aÃ±oNum } },
-                        { aÃ±o_hasta: null }
+                        { año_hasta: { [Op.gte]: añoNum } },
+                        { año_hasta: null }
                     ]
                 }
             ];
@@ -30,7 +30,7 @@ export async function listVehicles(req, res) {
 
         const { rows, count } = await Vehicle.findAndCountAll({
             where: filtros,
-            order: [['marca', 'ASC'], ['modelo', 'ASC'], ['aÃ±o_desde', 'ASC']],
+            order: [['marca', 'ASC'], ['modelo', 'ASC'], ['año_desde', 'ASC']],
             offset: parseInt(offset),
             limit: parseInt(pageSize),
         });
@@ -59,7 +59,7 @@ export async function getVehicle(req, res) {
             }]
         });
 
-        if (!vehicle) return res.status(404).json({ error: "VehÃ­culo no encontrado" });
+        if (!vehicle) return res.status(404).json({ error: "Vehículo no encontrado" });
         res.json(vehicle);
     } catch (error) {
         res.status(500).json({ error: "Error interno del servidor" });
@@ -68,19 +68,19 @@ export async function getVehicle(req, res) {
 
 export async function createVehicle(req, res) {
     try {
-        const { marca, modelo, aÃ±o_desde, aÃ±o_hasta, motor } = req.body;
+        const { marca, modelo, año_desde, año_hasta, motor } = req.body;
 
-        if (!marca || !modelo || !aÃ±o_desde) {
+        if (!marca || !modelo || !año_desde) {
             return res.status(400).json({ 
-                error: "Marca, modelo y aÃ±o desde son requeridos" 
+                error: "Marca, modelo y año desde son requeridos" 
             });
         }
 
         const vehicle = await Vehicle.create({ 
             marca, 
             modelo, 
-            aÃ±o_desde, 
-            aÃ±o_hasta, 
+            año_desde, 
+            año_hasta, 
             motor 
         });
         
@@ -93,7 +93,7 @@ export async function createVehicle(req, res) {
 export async function updateVehicle(req, res) {
     try {
         const vehicle = await Vehicle.findByPk(req.params.id);
-        if (!vehicle) return res.status(404).json({ error: "VehÃ­culo no encontrado" });
+        if (!vehicle) return res.status(404).json({ error: "Vehículo no encontrado" });
 
         await vehicle.update(req.body);
         res.json(vehicle);
@@ -105,11 +105,12 @@ export async function updateVehicle(req, res) {
 export async function deleteVehicle(req, res) {
     try {
         const vehicle = await Vehicle.findByPk(req.params.id);
-        if (!vehicle) return res.status(404).json({ error: "VehÃ­culo no encontrado" });
+        if (!vehicle) return res.status(404).json({ error: "Vehículo no encontrado" });
+
         await Fitment.destroy({ where: { vehicle_id: vehicle.id } });
         
         await vehicle.destroy();
-        res.json({ msg: "VehÃ­culo eliminado exitosamente" });
+        res.json({ msg: "Vehículo eliminado exitosamente" });
     } catch (error) {
         res.status(500).json({ error: "Error interno del servidor" });
     }
