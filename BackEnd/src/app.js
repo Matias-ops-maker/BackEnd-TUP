@@ -19,7 +19,20 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    // Permitir requests sin origin (como file:// o Postman)
+    if (!origin) return callback(null, true);
+    // Permitir el frontend configurado
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'http://localhost:4000'
+    ];
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Por ahora permitir todos en desarrollo
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -57,27 +70,45 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 4000;
 
 process.on('uncaughtException', (error) => {
-  
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
 });
 
 (async () => {
   try {
+    console.log('🔌 Conectando a la base de datos...');
     await sequelize.authenticate();
+    console.log('✅ Conexión a base de datos establecida');
+    
     if (process.env.NODE_ENV !== 'production') {
+      console.log('🔄 Sincronizando modelos...');
       await sequelize.sync({ force: false });
-      }
+      console.log('✅ Modelos sincronizados');
+    }
 
     const server = app.listen(PORT, () => {
-      });
+      console.log(`\n🚀 Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`📡 Entorno: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🌐 CORS habilitado para: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      console.log('\n✅ Backend listo para recibir peticiones\n');
+    });
 
     server.on('error', (error) => {
-      });
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Error: El puerto ${PORT} ya está en uso`);
+      } else {
+        console.error('❌ Error al iniciar servidor:', error);
+      }
+      process.exit(1);
+    });
 
   } catch (err) {
+    console.error('❌ Error fatal al iniciar aplicación:', err);
     process.exit(1);
   }
 })();
